@@ -1,5 +1,6 @@
 #include "CanoMqtt.h"
 
+//Made by Pablo Cano
 CanoMqtt *ref = nullptr;
 
 CanoMqtt::~CanoMqtt()
