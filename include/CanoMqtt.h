@@ -36,9 +36,9 @@ public:
     bool IsWifiConnected();
     void Init();
     void NetworkLoop();
-    void Subscribe(char *topic, int qos);
-    void UnSubscribe(char *topic);
-    void Publish(char *topic, int qos, bool retain, char *payload);
+    void Subscribe(const char *topic,const int qos);
+    void UnSubscribe(const char *topic);
+    void Publish(const char *topic, int qos, bool retain,const char *payload);
     void SetDebug(bool t);
     //Set callbacks
     void SetOnMqttConnect(void (*OnMqttConnect)());

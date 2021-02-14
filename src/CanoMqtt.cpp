@@ -296,17 +296,17 @@ bool CanoMqtt::IsWifiConnected()
   return false;
 }
 
-void CanoMqtt::Subscribe(char *topic, int qos)
+void CanoMqtt::Subscribe(const char *topic, int qos)
 {
   mqttClient.subscribe(topic, qos);
 }
 
-void CanoMqtt::UnSubscribe(char *topic)
+void CanoMqtt::UnSubscribe(const char *topic)
 {
   mqttClient.unsubscribe(topic);
 }
 
-void CanoMqtt::Publish(char *topic, int qos, bool retain, char *payload)
+void CanoMqtt::Publish(const char *topic, int qos, bool retain,const char *payload)
 {
   mqttClient.publish(topic, qos, retain, payload);
 }
