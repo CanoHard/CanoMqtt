@@ -174,7 +174,7 @@ void CanoMqtt::onWifiConnect(const WiFiEventStationModeGotIP &event)
   {
     Serial.println("Connected to Wi-Fi.");
   }
-
+  setup_ota();
   connectToMqtt();
 }
 void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
