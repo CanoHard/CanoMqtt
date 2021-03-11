@@ -4,7 +4,7 @@
 
 CanoMqtt c("Wifi-Name", "Wifi-Pass", "Broker-ip", "Broker-user", "Broker-pass", "Device-Name", "will-topic", "will-payload");
 
-void MqttConnect()
+void onMqttConnect()
 {
 
   Serial.println("Callback has been called");
@@ -41,12 +41,13 @@ void Otacall(int e, int p){
 
 void setup()
 {
-  c.SetOnMqttConnect(MqttConnect);
+  //Set callbacks
+  c.SetOnMqttConnect(onMqttConnect);
   c.SetOnMqttMessage(&onMqttMessage);
   c.SetOnOtaEvent(Otacall);
-  c.SetDebug(true);
-  c.Init();
-  c.Publish("test/l",0,false,"hi");
+  c.SetDebug(true); //Prints useful info in the serial monitor
+  c.Init(); //Intialize CanoMqtt
+  c.Publish("test/l",0,false,"hi");//Publish payload
 }
 
 void loop()
