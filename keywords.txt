@@ -1,0 +1,33 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+CanoMqtt	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+WifiRSSI    KEYWORD2
+IsMqttConnected KEYWORD2
+IsWifiConnected KEYWORD2
+Init	KEYWORD2
+NetworkLoop	KEYWORD2
+Subscribe	KEYWORD2
+UnSubscribe	KEYWORD2
+Publish	KEYWORD2
+SetDebug	KEYWORD2
+SetOnMqttConnect	KEYWORD2
+SetOnMqttDisconnect	KEYWORD2
+SetOnWiFiConnect	KEYWORD2
+SetOnWiFiDisconnect	KEYWORD2
+SetOnMqttMessage	KEYWORD2
+SetOnOtaEvent	KEYWORD2
+
+######################################
+# Constants (LITERAL1)
+#######################################
+OtaEvent	LITERAL1
