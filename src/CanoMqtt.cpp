@@ -189,7 +189,10 @@ void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
 #endif
 
 void CanoMqtt::Init()
-{
+{  if (debug)
+  {
+    Serial.begin(9600);
+  }
   if (FailSafeMode)
   {
     FailSafe.checkBoot();
