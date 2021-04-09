@@ -14,6 +14,7 @@
 
 #include <ArduinoOTA.h>
 #include <AsyncMqttClient.h>
+#include <FailSafe.h>
 
 class CanoMqtt
 {
@@ -36,10 +37,12 @@ public:
     bool IsWifiConnected();
     void Init();
     void NetworkLoop();
-    void Subscribe(const char *topic,const int qos);
+    void Subscribe(const char *topic, const int qos);
     void UnSubscribe(const char *topic);
-    void Publish(const char *topic, int qos, bool retain,const char *payload);
+    void Publish(const char *topic, int qos, bool retain, const char *payload);
     void SetDebug(bool t);
+    void SetFailSafeMode(bool enable); //Enable Fail Safe Mode
+    void StartFailSafe (); //Force Fail Safe Mode
     //Set callbacks
     void SetOnMqttConnect(void (*OnMqttConnect)());
     void SetOnMqttDisconnect(void (*OnMqttDisconnect)());
@@ -95,8 +98,11 @@ private:
 #endif
 
     bool debug = false;
+    bool FailSafeMode = false;
 
 #define MQTT_PORT 1883
+#define Wifi_Reconnect_Time 25 //Seconds for each attempt
+#define Mqtt_Reconnect_Time 25 //Seconds for each attempt
 };
 
 #endif
