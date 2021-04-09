@@ -1,6 +1,6 @@
 {
     "name": "CanoMqtt",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "This library provides an abstraction layer that handles mqtt wifi and ota so the user doesn't have to care about wifi and mqtt reconnection",
     "keywords": "mqtt, esp32, esp8266, wifi, iot, Arduino, ota",
     "repository":
@@ -15,7 +15,8 @@
     ],
     "license": "MIT",
     "dependencies": {
-        "marvinroger/AsyncMqttClient": "^0.8.2"
+        "marvinroger/AsyncMqttClient": "^0.8.2",
+        "gmag11/FailSafeMode": "*"
     },
     "frameworks": "arduino",
     "platforms": [
