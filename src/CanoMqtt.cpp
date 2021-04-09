@@ -190,10 +190,13 @@ void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
 
 void CanoMqtt::Init()
 {
-  FailSafe.checkBoot();
-  if (FailSafe.isActive())
-  { // Skip all user setup if fail safe mode is activated
-    return;
+  if (FailSafeMode)
+  {
+    FailSafe.checkBoot();
+    if (FailSafe.isActive())
+    { // Skip all user setup if fail safe mode is activated
+      return;
+    }
   }
   if (debug)
   {
@@ -280,10 +283,13 @@ void CanoMqtt::setup_ota()
 
 void CanoMqtt::NetworkLoop()
 {
-  FailSafe.loop();
-  if (FailSafe.isActive())
-  { // Skip all user loop code if Fail Safe mode is active
-    return;
+  if (FailSafeMode)
+  {
+    FailSafe.loop();
+    if (FailSafe.isActive())
+    { // Skip all user loop code if Fail Safe mode is active
+      return;
+    }
   }
   ArduinoOTA.handle();
 }
@@ -365,5 +371,8 @@ void CanoMqtt::SetFailSafeMode(bool enable)
 
 void CanoMqtt::StartFailSafe()
 {
-  FailSafe.startFailSafe();
+  if (FailSafeMode)
+  {
+    FailSafe.startFailSafe();
+  }
 }
