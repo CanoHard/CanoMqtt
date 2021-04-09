@@ -195,6 +195,10 @@ void CanoMqtt::Init()
     FailSafe.checkBoot();
     if (FailSafe.isActive())
     { // Skip all user setup if fail safe mode is activated
+      if (debug)
+      {
+        Serial.println("Fail Safe is active");
+      }
       return;
     }
   }
