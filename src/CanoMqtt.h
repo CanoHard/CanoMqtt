@@ -97,6 +97,8 @@ private:
     bool debug = false;
 
 #define MQTT_PORT 1883
+#define Wifi_Reconnect_Time 25 //Seconds for each attempt
+#define Mqtt_Reconnect_Time 25 //Seconds for each attempt
 };
 
 #endif
