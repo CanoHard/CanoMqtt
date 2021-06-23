@@ -40,6 +40,7 @@ public:
     void UnSubscribe(const char *topic);
     void Publish(const char *topic, int qos, bool retain,const char *payload);
     void SetDebug(bool t);
+    AsyncMqttClient* getInternalMqtt();
     //Set callbacks
     void SetOnMqttConnect(void (*OnMqttConnect)());
     void SetOnMqttDisconnect(void (*OnMqttDisconnect)());

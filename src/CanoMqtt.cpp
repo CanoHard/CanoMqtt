@@ -201,8 +201,8 @@ void CanoMqtt::Init()
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
 #ifdef ARDUINO_ARCH_ESP32
-  mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time*1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
-  wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(Wifi_Reconnect_Time*1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
+  mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
+  wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(Wifi_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
   WiFi.setHostname(name);
   WiFi.onEvent(std::bind(&CanoMqtt::WiFiEvent, this, std::placeholders::_1)); //Usando bind le paso la funcion correspodiente a esta clase
 #else
@@ -240,36 +240,40 @@ void CanoMqtt::setup_ota()
     ArduinoOTA.setPassword(ota_password);
   }
 
-  ArduinoOTA.onStart([&]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-      type = "sketch";
-    else // U_SPIFFS
-      type = "filesystem";
-    if (OnOtaEvent != nullptr)
-    {
-      OnOtaEvent(OTA_ONSTART, 0);
-    }
-  });
-  ArduinoOTA.onEnd([&]() {
-    if (OnOtaEvent != nullptr)
-    {
-      OnOtaEvent(OTA_ONEND, 0);
-    }
-  });
-  ArduinoOTA.onProgress([&](unsigned int progress, unsigned int total) {
-    int po = (progress * 100) / total;
-    if (OnOtaEvent != nullptr)
-    {
-      OnOtaEvent(OTA_ONPROGRESS, po);
-    }
-  });
-  ArduinoOTA.onError([&](ota_error_t error) {
-    if (OnOtaEvent != nullptr)
-    {
-      OnOtaEvent(OTA_ONERROR, 0);
-    }
-  });
+  ArduinoOTA.onStart([&]()
+                     {
+                       String type;
+                       if (ArduinoOTA.getCommand() == U_FLASH)
+                         type = "sketch";
+                       else // U_SPIFFS
+                         type = "filesystem";
+                       if (OnOtaEvent != nullptr)
+                       {
+                         OnOtaEvent(OTA_ONSTART, 0);
+                       }
+                     });
+  ArduinoOTA.onEnd([&]()
+                   {
+                     if (OnOtaEvent != nullptr)
+                     {
+                       OnOtaEvent(OTA_ONEND, 0);
+                     }
+                   });
+  ArduinoOTA.onProgress([&](unsigned int progress, unsigned int total)
+                        {
+                          int po = (progress * 100) / total;
+                          if (OnOtaEvent != nullptr)
+                          {
+                            OnOtaEvent(OTA_ONPROGRESS, po);
+                          }
+                        });
+  ArduinoOTA.onError([&](ota_error_t error)
+                     {
+                       if (OnOtaEvent != nullptr)
+                       {
+                         OnOtaEvent(OTA_ONERROR, 0);
+                       }
+                     });
   ArduinoOTA.begin();
 }
 
@@ -307,7 +311,7 @@ void CanoMqtt::UnSubscribe(const char *topic)
   mqttClient.unsubscribe(topic);
 }
 
-void CanoMqtt::Publish(const char *topic, int qos, bool retain,const char *payload)
+void CanoMqtt::Publish(const char *topic, int qos, bool retain, const char *payload)
 {
   mqttClient.publish(topic, qos, retain, payload);
 }
@@ -347,4 +351,9 @@ void CanoMqtt::SetOnOtaEvent(void (*OnOtaEvent)(OtaEvent e, int p))
 void CanoMqtt::SetDebug(bool t)
 {
   debug = t;
+}
+
+AsyncMqttClient *CanoMqtt::getInternalMqtt()
+{
+  return &mqttClient;
 }
