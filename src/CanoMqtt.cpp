@@ -86,6 +86,7 @@ void CanoMqtt::connectToMqtt()
     Serial.println("Connecting to MQTT...");
   }
   ref->mqttClient.connect();
+  ref->started = true;
 }
 
 void CanoMqtt::onMqttConnect(bool ispresent)
@@ -105,6 +106,7 @@ void CanoMqtt::onMqttConnect(bool ispresent)
   {
     OnMqttConnect(); //Call callback
   }
+  started = false;
 }
 void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
 {
@@ -125,7 +127,9 @@ void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
   {
     OnMqttDisconnect(); //Call callback
   }
+  started = true;
 }
+
 #ifdef ARDUINO_ARCH_ESP32
 void CanoMqtt::WiFiEvent(WiFiEvent_t event)
 {
@@ -280,6 +284,19 @@ void CanoMqtt::setup_ota()
 void CanoMqtt::NetworkLoop()
 {
   ArduinoOTA.handle();
+  if (!mqttClient.connected() && WiFi.isConnected() && !started) //Check if not connected
+  {
+    if (debug)
+    {
+      Serial.println("Disconection detected");
+    }
+#ifdef ARDUINO_ARCH_ESP32
+    xTimerStart(mqttReconnectTimer, 0);
+#else
+    mqttReconnectTimer.once(Mqtt_Reconnect_Time, connectToMqtt);
+#endif
+    started = true;
+  }
 }
 
 //User methods
