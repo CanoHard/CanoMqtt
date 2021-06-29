@@ -91,6 +91,12 @@ void CanoMqtt::connectToMqtt()
 
 void CanoMqtt::onMqttConnect(bool ispresent)
 {
+  //Stop timers
+#ifdef ARDUINO_ARCH_ESP32
+  xTimerStop(mqttReconnectTimer, 0);
+#else
+  mqttReconnectTimer.detach();
+#endif
   if (debug)
   {
     Serial.println("Connected to MQTT.");
@@ -118,9 +124,9 @@ void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
   if (WiFi.isConnected())
   {
 #ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer, 0);
+    xTimerStart(mqttReconnectTimer,0);
 #else
-    mqttReconnectTimer.once(Mqtt_Reconnect_Time, connectToMqtt);
+    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt)
 #endif
   }
   if (OnMqttDisconnect != nullptr)
@@ -205,7 +211,7 @@ void CanoMqtt::Init()
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
 #ifdef ARDUINO_ARCH_ESP32
-  mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
+  mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time * 1000), pdTRUE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
   wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(Wifi_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
   WiFi.setHostname(name);
   WiFi.onEvent(std::bind(&CanoMqtt::WiFiEvent, this, std::placeholders::_1)); //Usando bind le paso la funcion correspodiente a esta clase
@@ -291,9 +297,9 @@ void CanoMqtt::NetworkLoop()
       Serial.println("Disconection detected");
     }
 #ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer, 0);
+    xTimerStart(mqttReconnectTimer,0);
 #else
-    mqttReconnectTimer.once(Mqtt_Reconnect_Time, connectToMqtt);
+    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
 #endif
     started = true;
   }
