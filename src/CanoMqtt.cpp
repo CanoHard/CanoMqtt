@@ -126,7 +126,7 @@ void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
 #ifdef ARDUINO_ARCH_ESP32
     xTimerStart(mqttReconnectTimer,0);
 #else
-    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt)
+    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
 #endif
   }
   if (OnMqttDisconnect != nullptr)
