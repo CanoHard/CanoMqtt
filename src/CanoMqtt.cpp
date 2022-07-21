@@ -184,6 +184,7 @@ void CanoMqtt::onWifiConnect(const WiFiEventStationModeGotIP &event)
   {
     Serial.println("Connected to Wi-Fi.");
   }
+  OnWiFiConnect(); //Call callback
   setup_ota();
   connectToMqtt();
 }
@@ -193,6 +194,7 @@ void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
   {
     Serial.println("Disconnected from Wi-Fi.");
   }
+  OnWiFiDisconnect(); //Call callback
   mqttReconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
   wifiReconnectTimer.once(Wifi_Reconnect_Time, connectToWifi);
 }
