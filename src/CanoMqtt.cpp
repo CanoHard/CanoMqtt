@@ -1,6 +1,6 @@
 #include "CanoMqtt.h"
 
-//Made by Pablo Cano
+// Made by Pablo Cano
 CanoMqtt *ref = nullptr;
 
 CanoMqtt::~CanoMqtt()
@@ -69,7 +69,7 @@ CanoMqtt::CanoMqtt(const char *wifi_ssid, const char *wifi_password, const char 
   this->ota_password = ota_password;
 }
 
-//CALLBACKS
+// CALLBACKS
 void CanoMqtt::connectToWifi()
 {
   if (ref->debug)
@@ -91,7 +91,7 @@ void CanoMqtt::connectToMqtt()
 
 void CanoMqtt::onMqttConnect(bool ispresent)
 {
-  //Stop timers
+  // Stop timers
 #ifdef ARDUINO_ARCH_ESP32
   xTimerStop(mqttReconnectTimer, 0);
 #else
@@ -110,7 +110,7 @@ void CanoMqtt::onMqttConnect(bool ispresent)
   }
   if (OnMqttConnect != nullptr)
   {
-    OnMqttConnect(); //Call callback
+    OnMqttConnect(); // Call callback
   }
   started = false;
 }
@@ -124,14 +124,14 @@ void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
   if (WiFi.isConnected())
   {
 #ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer,0);
+    xTimerStart(mqttReconnectTimer, 0);
 #else
     mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
 #endif
   }
   if (OnMqttDisconnect != nullptr)
   {
-    OnMqttDisconnect(); //Call callback
+    OnMqttDisconnect(); // Call callback
   }
   started = true;
 }
@@ -157,7 +157,7 @@ void CanoMqtt::WiFiEvent(WiFiEvent_t event)
     connectToMqtt();
     if (OnWiFiConnect != nullptr)
     {
-      OnWiFiConnect(); //Call callback
+      OnWiFiConnect(); // Call callback
     }
     break;
   case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -170,7 +170,7 @@ void CanoMqtt::WiFiEvent(WiFiEvent_t event)
     xTimerStart(wifiReconnectTimer, 0);
     if (OnWiFiDisconnect != nullptr)
     {
-      OnWiFiDisconnect(); //Call callback
+      OnWiFiDisconnect(); // Call callback
     }
     break;
   default:
@@ -184,7 +184,10 @@ void CanoMqtt::onWifiConnect(const WiFiEventStationModeGotIP &event)
   {
     Serial.println("Connected to Wi-Fi.");
   }
-  OnWiFiConnect(); //Call callback
+  if (OnWiFiConnect != nullptr)
+  {
+    OnWiFiConnect(); // Call callback
+  }
   setup_ota();
   connectToMqtt();
 }
@@ -194,7 +197,10 @@ void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
   {
     Serial.println("Disconnected from Wi-Fi.");
   }
-  OnWiFiDisconnect(); //Call callback
+  if (OnWiFiDisconnect != nullptr)
+  {
+    OnWiFiDisconnect(); // Call callback
+  }
   mqttReconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
   wifiReconnectTimer.once(Wifi_Reconnect_Time, connectToWifi);
 }
@@ -216,14 +222,14 @@ void CanoMqtt::Init()
   mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time * 1000), pdTRUE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
   wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(Wifi_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
   WiFi.setHostname(name);
-  WiFi.onEvent(std::bind(&CanoMqtt::WiFiEvent, this, std::placeholders::_1)); //Usando bind le paso la funcion correspodiente a esta clase
+  WiFi.onEvent(std::bind(&CanoMqtt::WiFiEvent, this, std::placeholders::_1)); // Usando bind le paso la funcion correspodiente a esta clase
 #else
   wifiConnectHandler = WiFi.onStationModeGotIP(std::bind(&CanoMqtt::onWifiConnect, this, std::placeholders::_1));
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(std::bind(&CanoMqtt::onWifiDisconnect, this, std::placeholders::_1));
   WiFi.hostname(name);
 #endif
 
-  //Serial.printf("\n Informacion %s, %s, %s, \n", mqtt_user, mqtt_password, broker_ip);
+  // Serial.printf("\n Informacion %s, %s, %s, \n", mqtt_user, mqtt_password, broker_ip);
   mqttClient.setCredentials(mqtt_user, mqtt_password);
   mqttClient.onConnect(std::bind(&CanoMqtt::onMqttConnect, this, std::placeholders::_1));
   mqttClient.onDisconnect(std::bind(&CanoMqtt::onMqttDisconnect, this, std::placeholders::_1));
@@ -262,44 +268,40 @@ void CanoMqtt::setup_ota()
                        if (OnOtaEvent != nullptr)
                        {
                          OnOtaEvent(OTA_ONSTART, 0);
-                       }
-                     });
+                       } });
   ArduinoOTA.onEnd([&]()
                    {
                      if (OnOtaEvent != nullptr)
                      {
                        OnOtaEvent(OTA_ONEND, 0);
-                     }
-                   });
+                     } });
   ArduinoOTA.onProgress([&](unsigned int progress, unsigned int total)
                         {
                           int po = (progress * 100) / total;
                           if (OnOtaEvent != nullptr)
                           {
                             OnOtaEvent(OTA_ONPROGRESS, po);
-                          }
-                        });
+                          } });
   ArduinoOTA.onError([&](ota_error_t error)
                      {
                        if (OnOtaEvent != nullptr)
                        {
                          OnOtaEvent(OTA_ONERROR, 0);
-                       }
-                     });
+                       } });
   ArduinoOTA.begin();
 }
 
 void CanoMqtt::NetworkLoop()
 {
   ArduinoOTA.handle();
-  if (!mqttClient.connected() && WiFi.isConnected() && !started) //Check if not connected
+  if (!mqttClient.connected() && WiFi.isConnected() && !started) // Check if not connected
   {
     if (debug)
     {
       Serial.println("Disconection detected");
     }
 #ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer,0);
+    xTimerStart(mqttReconnectTimer, 0);
 #else
     mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
 #endif
@@ -307,7 +309,7 @@ void CanoMqtt::NetworkLoop()
   }
 }
 
-//User methods
+// User methods
 int CanoMqtt::WifiRSSI()
 {
   return WiFi.RSSI();
@@ -341,7 +343,7 @@ void CanoMqtt::Publish(const char *topic, int qos, bool retain, const char *payl
   mqttClient.publish(topic, qos, retain, payload);
 }
 
-//Set callbacks
+// Set callbacks
 
 void CanoMqtt::SetOnMqttConnect(void (*OnMqttConnect)())
 {
@@ -365,7 +367,7 @@ void CanoMqtt::SetOnWiFiDisconnect(void (*OnWiFiDisconnect)())
 
 void CanoMqtt::SetOnMqttMessage(void (*OnMqttMessage)(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total))
 {
-  //this->OnWiFiDisconnect = OnWiFiDisconnect;
+  // this->OnWiFiDisconnect = OnWiFiDisconnect;
   mqttClient.onMessage(OnMqttMessage);
 }
 void CanoMqtt::SetOnOtaEvent(void (*OnOtaEvent)(OtaEvent e, int p))
