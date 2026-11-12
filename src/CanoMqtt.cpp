@@ -1,24 +1,33 @@
 #include "CanoMqtt.h"
 
 // Made by Pablo Cano
+
+// The WiFi events were renamed in the ESP32 Arduino core 2.x
+#if defined(ARDUINO_ARCH_ESP32) && defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 2
+#define SYSTEM_EVENT_STA_GOT_IP ARDUINO_EVENT_WIFI_STA_GOT_IP
+#define SYSTEM_EVENT_STA_DISCONNECTED ARDUINO_EVENT_WIFI_STA_DISCONNECTED
+#endif
 CanoMqtt *ref = nullptr;
 
 CanoMqtt::~CanoMqtt()
 {
+  // The strings are owned by the user and the object may not live in the heap,
+  // so nothing is deleted here: only stop what this object started.
+#ifdef ARDUINO_ARCH_ESP32
+  if (wifiReconnectTimer != nullptr)
+  {
+    xTimerDelete(wifiReconnectTimer, 0);
+  }
+#else
+  wifiReconnectTimer.detach();
+#endif
   mqttClient.disconnect(true);
   WiFi.disconnect();
   WiFi.softAPdisconnect(true);
-  delete wifi_ssid;
-  delete wifi_password;
-  delete broker_ip;
-  delete mqtt_user;
-  delete mqtt_password;
-  delete name;
-  delete will_topic;
-  delete will_message;
-  delete ota_password;
-  delete this;
-  delete ref;
+  if (ref == this)
+  {
+    ref = nullptr;
+  }
 }
 
 CanoMqtt::CanoMqtt(const char *wifi_ssid, const char *wifi_password, const char *broker_ip, const char *mqtt_user, const char *mqtt_password, const char *name)
@@ -85,18 +94,12 @@ void CanoMqtt::connectToMqtt()
   {
     Serial.println("Connecting to MQTT...");
   }
+  ref->lastMqttAttempt = millis();
   ref->mqttClient.connect();
-  ref->started = true;
 }
 
 void CanoMqtt::onMqttConnect(bool ispresent)
 {
-  // Stop timers
-#ifdef ARDUINO_ARCH_ESP32
-  xTimerStop(mqttReconnectTimer, 0);
-#else
-  mqttReconnectTimer.detach();
-#endif
   if (debug)
   {
     Serial.println("Connected to MQTT.");
@@ -112,7 +115,6 @@ void CanoMqtt::onMqttConnect(bool ispresent)
   {
     OnMqttConnect(); // Call callback
   }
-  started = false;
 }
 void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
 {
@@ -121,19 +123,11 @@ void CanoMqtt::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
     Serial.println("Disconnected from MQTT.");
   }
 
-  if (WiFi.isConnected())
-  {
-#ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer, 0);
-#else
-    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
-#endif
-  }
+  // The reconnection is handled by NetworkLoop()
   if (OnMqttDisconnect != nullptr)
   {
     OnMqttDisconnect(); // Call callback
   }
-  started = true;
 }
 
 #ifdef ARDUINO_ARCH_ESP32
@@ -166,7 +160,6 @@ void CanoMqtt::WiFiEvent(WiFiEvent_t event)
       Serial.println("WiFi lost connection");
     }
 
-    xTimerStop(mqttReconnectTimer, 0); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
     xTimerStart(wifiReconnectTimer, 0);
     if (OnWiFiDisconnect != nullptr)
     {
@@ -201,7 +194,6 @@ void CanoMqtt::onWifiDisconnect(const WiFiEventStationModeDisconnected &event)
   {
     OnWiFiDisconnect(); // Call callback
   }
-  mqttReconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
   wifiReconnectTimer.once(Wifi_Reconnect_Time, connectToWifi);
 }
 #endif
@@ -219,7 +211,6 @@ void CanoMqtt::Init()
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
 #ifdef ARDUINO_ARCH_ESP32
-  mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(Mqtt_Reconnect_Time * 1000), pdTRUE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
   wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(Wifi_Reconnect_Time * 1000), pdFALSE, (void *)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
   WiFi.setHostname(name);
   WiFi.onEvent(std::bind(&CanoMqtt::WiFiEvent, this, std::placeholders::_1)); // Usando bind le paso la funcion correspodiente a esta clase
@@ -294,18 +285,32 @@ void CanoMqtt::setup_ota()
 void CanoMqtt::NetworkLoop()
 {
   ArduinoOTA.handle();
-  if (!mqttClient.connected() && WiFi.isConnected() && !started) // Check if not connected
+
+  // MQTT reconnection. It is done here and not from the disconnect callback because
+  // the callback is not always fired, and the client can get stuck in the
+  // CONNECTING/DISCONNECTING state, where connect() does nothing.
+  if (!WiFi.isConnected() || mqttClient.connected())
+  {
+    pendingConnect = false;
+    return;
+  }
+
+  if (pendingConnect)
+  {
+    pendingConnect = false;
+    connectToMqtt();
+    return;
+  }
+
+  if (millis() - lastMqttAttempt >= Mqtt_Reconnect_Time * 1000UL)
   {
     if (debug)
     {
-      Serial.println("Disconection detected");
+      Serial.println("MQTT not connected, retrying");
     }
-#ifdef ARDUINO_ARCH_ESP32
-    xTimerStart(mqttReconnectTimer, 0);
-#else
-    mqttReconnectTimer.attach(Mqtt_Reconnect_Time, connectToMqtt);
-#endif
-    started = true;
+    lastMqttAttempt = millis();
+    mqttClient.disconnect(true); // Drop whatever is left of the previous attempt
+    pendingConnect = true;       // And connect on the next call, once it has been cleaned up
   }
 }
 

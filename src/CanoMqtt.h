@@ -86,17 +86,16 @@ private:
     AsyncMqttClient mqttClient;
 
 #ifdef ARDUINO_ARCH_ESP32
-    TimerHandle_t mqttReconnectTimer;
-    TimerHandle_t wifiReconnectTimer;
+    TimerHandle_t wifiReconnectTimer = nullptr;
 #else
-    Ticker mqttReconnectTimer;
     WiFiEventHandler wifiConnectHandler;
     WiFiEventHandler wifiDisconnectHandler;
     Ticker wifiReconnectTimer;
 #endif
 
     bool debug = false;
-    bool started = true; 
+    unsigned long lastMqttAttempt = 0; // millis() of the last MQTT connection attempt
+    bool pendingConnect = false;       // Connect on the next NetworkLoop() call
 #define MQTT_PORT 1883
 #define Wifi_Reconnect_Time 25 //Seconds for each attempt
 #define Mqtt_Reconnect_Time 25 //Seconds for each attempt
